@@ -21,7 +21,8 @@ import (
 type Options struct {
 	genericclioptions.IOStreams
 
-	APIVersion string
+	APIVersion    string
+	PrintJSONPath bool
 
 	Mapper    meta.RESTMapper
 	Discovery discovery.CachedDiscoveryInterface
@@ -58,6 +59,7 @@ kubectl explore --context=onecontext
 `,
 	}
 	cmd.Flags().StringVar(&o.APIVersion, "api-version", o.APIVersion, "Get different explanations for particular API version (API group/version)")
+	cmd.Flags().BoolVarP(&o.PrintJSONPath, "print-json-path", "p", true, "Print JSONPath of searched field")
 	// Use default flags from
 	// https://github.com/kubernetes/kubectl/blob/e4426be7778f13d7b8122eee72132ddd089d1397/pkg/cmd/cmd.go#L297
 	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).WithDiscoveryQPS(50.0)
@@ -125,10 +127,11 @@ func (o *Options) Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	e, err := NewExplorer(inputFieldPath, strings.ToLower(gvk.Kind), o.Schema, gvk)
+	e, err := NewExplorer(inputFieldPath, strings.ToLower(gvk.Kind), o.Schema, gvk, o.PrintJSONPath)
 	if err != nil {
 		return err
 	}
+
 	return e.Explore(o.Out)
 }
 

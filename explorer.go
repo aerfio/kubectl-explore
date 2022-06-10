@@ -23,15 +23,17 @@ type Explorer struct {
 	pathSchema     map[string]proto.Schema
 	schemaByGvk    proto.Schema
 	gvk            schema.GroupVersionKind
+	printJSONPath  bool
 }
 
 // NewExplorer initializes Explorer.
-func NewExplorer(fieldPath, kind string, r openapi.Resources, gvk schema.GroupVersionKind) (*Explorer, error) {
+func NewExplorer(fieldPath, kind string, r openapi.Resources, gvk schema.GroupVersionKind, printJSONPath bool) (*Explorer, error) {
 	s := r.LookupResource(gvk)
 	if s == nil {
 		return nil, fmt.Errorf("%#v is not found on the Open API schema", gvk)
 	}
 	return &Explorer{
+		printJSONPath:  printJSONPath,
 		openAPISchema:  r,
 		inputFieldPath: fieldPath,
 		prevPath:       kind,
@@ -52,7 +54,11 @@ func (e *Explorer) Explore(w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("get the path to explain: %w", err)
 	}
-
+	if e.printJSONPath {
+		defer func() {
+			fmt.Fprintf(w, "Chosen JSONPath: %s\n", path)
+		}()
+	}
 	return e.explain(w, path)
 }
 
